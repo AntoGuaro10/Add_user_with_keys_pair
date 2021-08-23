@@ -1,0 +1,66 @@
+---
+-  name: "Created for ticket MSP-6455"
+   hosts: test
+   become: yes
+   become_user: root
+   gather_facts: no
+ 
+   tasks:
+   -  name: "Create group alongo"
+      group: 
+        name: "{{ item.group_name }}"
+        state: present
+      with_items:
+        - group_name: alongo
+
+   -  name: "Create user alongo in Prod env for all machine"
+      user:
+        name: "{{ item.name }}"
+        shell: /bin/bash
+        group: "{{ item.name }}"
+        append: yes
+        state: present
+        createhome: yes
+      with_items:
+        - name: alongo  
+
+   -  name: "Create .ssh folder for alongo"
+      file:
+        path: "/home/{{ item.name }}/.ssh"
+        state: directory
+        owner: "{{ item.name }}"
+        group: "{{ item.name }}"
+        mode: 0700
+      with_items:
+        - name: alongo
+
+   -  name: "Create authorized_key file for alongo"
+      file:
+        state: touch
+        path: "/home/{{ item.name }}/.ssh/authorized_keys"
+        mode: 0700
+        owner: "{{ item.name }}"
+        group: "{{ item.name }}"
+      with_items:
+        - name: alongo
+
+   -  name: "Copy the key file into .ssh/authorized_keys"
+      copy:
+        src: "{{ item.src }}"
+        dest: "/home/{{ item.name }}/.ssh/authorized_keys"
+        owner: "{{ item.name }}"
+        group: "{{ item.name }}"
+        mode: 0644
+      with_items:
+        - name: alongo
+          src: pubkey
+              
+   -  name: "Edit sudoers file to adding alongo"
+      lineinfile:
+        # Azure crea gli utenti root in /etc/suodoers.d/waagent 
+        dest: /etc/sudoers
+        state: present
+        #regexp: "^%alongo" # usare questa direttiva solo se l'utente è già esistente
+        line: "alongo ALL=(ALL) NOPASSWD: ALL"
+        validate: "visudo -cf %s"
+...
