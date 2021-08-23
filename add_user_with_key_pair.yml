@@ -1,17 +1,19 @@
 ---
--  name: "Created for ticket MSP-6455"
+-  name: "Ansible playbook to create an user with root grants and access with a public-private key pair"
    hosts: test
    become: yes
    become_user: root
    gather_facts: no
- 
+   
+   # Here I'm using "username" to refer to the user that will be created
+   
    tasks:
-   -  name: "Create group alongo"
+   -  name: "Create group username"
       group: 
         name: "{{ item.group_name }}"
         state: present
       with_items:
-        - group_name: alongo
+        - group_name: username
 
    -  name: "Create user alongo in Prod env for all machine"
       user:
@@ -22,9 +24,9 @@
         state: present
         createhome: yes
       with_items:
-        - name: alongo  
+        - name: username
 
-   -  name: "Create .ssh folder for alongo"
+   -  name: "Create .ssh folder for username"
       file:
         path: "/home/{{ item.name }}/.ssh"
         state: directory
@@ -32,9 +34,9 @@
         group: "{{ item.name }}"
         mode: 0700
       with_items:
-        - name: alongo
+        - name: username
 
-   -  name: "Create authorized_key file for alongo"
+   -  name: "Create authorized_key file for username"
       file:
         state: touch
         path: "/home/{{ item.name }}/.ssh/authorized_keys"
@@ -42,7 +44,7 @@
         owner: "{{ item.name }}"
         group: "{{ item.name }}"
       with_items:
-        - name: alongo
+        - name: username
 
    -  name: "Copy the key file into .ssh/authorized_keys"
       copy:
@@ -52,15 +54,15 @@
         group: "{{ item.name }}"
         mode: 0644
       with_items:
-        - name: alongo
-          src: pubkey
+        - name: username
+          src: /path/to/your/pubkey
               
-   -  name: "Edit sudoers file to adding alongo"
+   -  name: "Edit sudoers file to adding username"
       lineinfile:
-        # Azure crea gli utenti root in /etc/suodoers.d/waagent 
-        dest: /etc/sudoers
+        # Azure create the root users in /etc/suodoers.d/waagent, so you can simply create them to /etc/sudoers
+        dest: /etc/sudoers.d/waagent
         state: present
-        #regexp: "^%alongo" # usare questa direttiva solo se l'utente è già esistente
-        line: "alongo ALL=(ALL) NOPASSWD: ALL"
+        #regexp: "^%username" # use this if the user already exist and you want to retrive the line with a regexp
+        line: "username ALL=(ALL) NOPASSWD: ALL"
         validate: "visudo -cf %s"
 ...
